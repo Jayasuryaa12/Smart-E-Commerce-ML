@@ -1,0 +1,50 @@
+{
+  "model_version": "1.0.0-PhaseII",
+  "training_timestamp": "2026-10-01T16:51:54.643230+00:00",
+  "best_model_name": "CatBoost",
+  "dataset_total_sessions": 12330,
+  "train_sessions": 9764,
+  "test_sessions": 2441,
+  "numerical_features": [
+    "Administrative",
+    "Administrative_Duration",
+    "Informational",
+    "Informational_Duration",
+    "ProductRelated",
+    "ProductRelated_Duration",
+    "BounceRates",
+    "ExitRates",
+    "PageValues",
+    "SpecialDay",
+    "Total_Page_Views",
+    "Total_Duration",
+    "Avg_Duration_Per_Page",
+    "Product_View_Ratio",
+    "Bounce_Exit_Ratio",
+    "PageValue_Intensity"
+  ],
+  "categorical_features": [
+    "Month",
+    "OperatingSystems",
+    "Browser",
+    "Region",
+    "TrafficType",
+    "VisitorType",
+    "Weekend"
+  ],
+  "evaluation_metrics": {
+    "Model": "CatBoost",
+    "Accuracy": 0.8693,
+    "Precision": 0.5535,
+    "Recall": 0.8534,
+    "F1-Score": 0.6715,
+    "ROC-AUC": 0.9352,
+    "PR-AUC": 0.7482,
+    "CV F1 (Mean)": 0.6581,
+    "CV F1 (Std)": 0.0125,
+    "CV ROC-AUC": 0.9315,
+    "CV PR-AUC": 0.7505,
+    "Train F1": 0.707,
+    "Train ROC-AUC": 0.9605
+  }
+}

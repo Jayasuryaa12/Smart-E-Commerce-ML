@@ -1,0 +1,21 @@
+# Python Caches & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Build & IDE Artifacts
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# CatBoost & Model Training Logs
+catboost_info/
+
+# Keep models/*.pkl tracked for direct cloud deployment without retraining
+!models/*.pkl
