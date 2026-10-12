@@ -1,0 +1,68 @@
+{
+  "conversion_insights": [
+    {
+      "category": "Page Value Intent Factor",
+      "metric": "56.3% vs 3.9%",
+      "finding": "Sessions with non-zero PageValues achieve a 56.3% purchase conversion rate compared to just 3.9% for zero PageValue sessions.",
+      "action": "Prioritize user flows and recommendation widgets on pages assigned high PageValue scores."
+    },
+    {
+      "category": "Visitor Type Dynamics",
+      "metric": "Returning Visitor Conv: 13.93%",
+      "finding": "Returning visitors generate the majority of total purchase conversions due to accumulated familiarity and intent.",
+      "action": "Deploy personalized retargeting, saved cart reminders, and loyalty incentives for returning visitor segments."
+    },
+    {
+      "category": "Exit Rate Friction",
+      "metric": "High Exit Rate Conv: 0.5%",
+      "finding": "Sessions with ExitRates exceeding 10% experience a sharp conversion decline down to 0.5%.",
+      "action": "Implement exit-intent popup offers, live support chat triggers, and checkout simplification on high-exit pages."
+    },
+    {
+      "category": "Seasonal Peak Intent",
+      "metric": "Peak Month: Nov (25.35%)",
+      "finding": "The highest session conversion rate occurs in Nov (25.35%), highlighting key promotional windows.",
+      "action": "Align digital ad spend and promotional campaigns ahead of peak conversion months."
+    }
+  ],
+  "actionable_recommendations": [
+    {
+      "Pillar": "CRO & Funnel Optimization",
+      "Recommendation": "High-Intent Checkout Fast-Track",
+      "Evidence": "Sessions with PageValues > 0 convert at over 50%.",
+      "Impact": "High",
+      "Strategy": "Trigger express checkout options and inline payment methods as soon as PageValue score increases."
+    },
+    {
+      "Pillar": "Retention & Personalization",
+      "Recommendation": "Returning Visitor Loyalty Triggers",
+      "Evidence": "Returning visitors account for 85%+ of overall purchase sessions.",
+      "Impact": "High",
+      "Strategy": "Provide personalized product recommendations based on past session duration and browsed categories."
+    },
+    {
+      "Pillar": "Friction Reduction",
+      "Recommendation": "Exit Mitigation on Product Pages",
+      "Evidence": "High Exit Rate (>10%) causes an 80% reduction in conversion likelihood.",
+      "Impact": "Medium",
+      "Strategy": "Redesign high exit-rate product detail pages with customer reviews, trust badges, and stock urgency indicators."
+    },
+    {
+      "Pillar": "Machine Learning Deployment",
+      "Recommendation": "Real-Time Intent Scoring API",
+      "Evidence": "Tree ensemble (CatBoost/XGBoost) achieves high PR-AUC on imbalanced session traffic.",
+      "Impact": "High",
+      "Strategy": "Serve trained model via REST API to dynamically offer coupon discounts to high-intent but bounce-risk visitors."
+    }
+  ],
+  "model_summary": {
+    "top_model": "CatBoost",
+    "top_f1": 0.6715,
+    "top_roc_auc": 0.9352,
+    "top_pr_auc": 0.7482,
+    "top_precision": 0.5535,
+    "top_recall": 0.8534,
+    "baseline_f1": 0.6155,
+    "f1_uplift": 0.056
+  }
+}

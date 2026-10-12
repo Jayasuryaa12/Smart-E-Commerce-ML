@@ -117,12 +117,60 @@ The web application will open automatically at `http://localhost:8501`.
 
 ## 🌐 Cloud Deployment Instructions (Streamlit Community Cloud / PaaS)
 
-1. **Repository Setup:** Push the complete repository including `models/*.pkl`, `data/online_shoppers_intention.csv`, `.streamlit/config.toml`, and `requirements.txt` to GitHub.
-2. **Deploy on Streamlit Cloud:**
-   - Sign in to [share.streamlit.io](https://share.streamlit.io).
-   - Click **"New App"**, select the repository, set main file path to `app.py`.
-   - Click **"Deploy"**. The application will initialize automatically using pre-compiled model artifacts without needing cold-start retraining.
-3. **Environment & Secrets:** No external credentials or secrets required.
+## 🚀 Running the System Locally
+
+### Option A: Modern Analytics SaaS Platform (Recommended)
+
+1. **Start the ML Backend REST API (Flask on Port 5000):**
+   ```bash
+   # In terminal 1 (root directory)
+   python server.py
+   # Backend listens at http://localhost:5000
+   ```
+
+2. **Start the React + Vite Frontend (Port 5173):**
+   ```bash
+   # In terminal 2
+   cd frontend
+   npm install
+   npm run dev
+   # Access SaaS platform at http://localhost:5173
+   ```
+
+3. **Run Automated Test Suites:**
+   ```bash
+   # Backend Pytest Suite (18 endpoints):
+   python -m pytest tests/test_api_endpoints.py
+
+   # Frontend Vitest Suite (API client & formatters):
+   cd frontend && npm test
+   ```
+
+### Option B: Legacy Streamlit UI (Fallback)
+```bash
+streamlit run app.py
+```
+
+---
+
+## 🌐 Production Cloud Deployment
+
+### 1. Backend REST API on Render
+- **Spec:** Defined in [render.yaml](render.yaml).
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `gunicorn server:app`
+- **Environment Variables:**
+  - `CORS_ORIGINS`: `*` (or your Vercel deployment URL)
+  - `PYTHON_VERSION`: `3.10.12`
+
+### 2. Frontend SaaS Platform on Vercel
+- **Spec:** Configured in [vercel.json](vercel.json).
+- **Framework Preset:** Vite
+- **Root Directory:** `./` (or `frontend`)
+- **Build Command:** `npm --prefix frontend run build`
+- **Output Directory:** `frontend/dist`
+- **Environment Variable:**
+  - `VITE_API_URL`: Your Render backend service URL (e.g. `https://smart-ecommerce-ml.onrender.com`)
 
 ---
 

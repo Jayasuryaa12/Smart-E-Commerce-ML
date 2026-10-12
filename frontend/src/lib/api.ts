@@ -1,0 +1,373 @@
+import { z } from 'zod';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+async function fetchJson<T>(url: string, options?: RequestInit, schema?: z.ZodSchema<T>): Promise<T> {
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  const res = await fetch(fullUrl, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    let errorMsg = `HTTP Error ${res.status}: ${res.statusText}`;
+    try {
+      const errJson = await res.json();
+      if (errJson?.message) errorMsg = errJson.message;
+    } catch {
+      // ignore
+    }
+    throw new Error(errorMsg);
+  }
+
+  const json = await res.json();
+  if (schema) {
+    const parsed = schema.safeParse(json);
+    if (!parsed.success) {
+      console.warn(`Zod schema validation warning for ${url}:`, parsed.error);
+    }
+  }
+  return json as T;
+}
+
+// ----------------- SCHEMAS & TYPES -----------------
+
+export const HealthSchema = z.object({
+  status: z.string(),
+  timestamp: z.string(),
+  dataset_loaded: z.boolean(),
+  model_loaded: z.boolean(),
+  active_model_name: z.string(),
+  allowed_cors_origin: z.string().optional(),
+});
+export type HealthData = z.infer<typeof HealthSchema>;
+
+export const MetaSchema = z.object({
+  status: z.string(),
+  data: z.object({
+    model_version: z.string(),
+    training_timestamp: z.string(),
+    best_model_name: z.string(),
+    dataset_total_sessions: z.number(),
+    train_sessions: z.number(),
+    test_sessions: z.number(),
+    numerical_features: z.array(z.string()),
+    categorical_features: z.array(z.string()),
+    evaluation_metrics: z.record(z.string(), z.any()),
+  }),
+});
+export type MetaResponse = z.infer<typeof MetaSchema>;
+
+export const DatasetSummarySchema = z.object({
+  status: z.string(),
+  data: z.object({
+    total_records: z.number(),
+    total_columns: z.number(),
+    missing_values: z.number(),
+    duplicate_rows: z.number(),
+    purchase_positive: z.number(),
+    purchase_negative: z.number(),
+    conversion_rate_pct: z.number(),
+    numeric_columns: z.array(z.string()),
+    categorical_columns: z.array(z.string()),
+  }),
+});
+export type DatasetSummaryResponse = z.infer<typeof DatasetSummarySchema>;
+
+export interface QualityColumn {
+  column: string;
+  missing_count: number;
+  missing_percentage: number;
+  unique_values: number;
+  dtype: string;
+  sample_values: any[];
+}
+
+export interface EdaOverviewData {
+  total_sessions: number;
+  buyers: number;
+  non_buyers: number;
+  conversion_rate: number;
+  month_breakdown: Array<{ Month: string; count: number; rate: number }>;
+  visitor_breakdown: Array<{ VisitorType: string; count: number; rate: number }>;
+  weekend_breakdown: Array<{ Weekend: boolean; count: number; rate: number }>;
+  traffic_breakdown: Array<{ TrafficType: number; count: number; rate: number }>;
+  numerical_summary: Array<{
+    feature: string;
+    mean: number;
+    std: number;
+    min: number;
+    median: number;
+    max: number;
+    skew: number;
+    outliers_count: number;
+  }>;
+}
+
+export interface DistributionBin {
+  bin_start: number;
+  bin_end: number;
+  bin_label: string;
+  total_count: number;
+  buyers_count: number;
+  non_buyers_count: number;
+  buyer_conversion_rate: number;
+}
+
+export interface EdaDistributionResponse {
+  status: string;
+  feature: string;
+  bins_count: number;
+  summary: {
+    min: number;
+    max: number;
+    mean: number;
+    median: number;
+    std: number;
+  };
+  data: DistributionBin[];
+}
+
+export interface CorrelationData {
+  columns: string[];
+  matrix: number[][];
+}
+
+export interface ModelMetric {
+  Model: string;
+  Accuracy: number;
+  Precision: number;
+  Recall: number;
+  'F1-Score': number;
+  'ROC-AUC': number;
+  'PR-AUC': number;
+  'CV F1 (Mean)': number;
+  'CV F1 (Std)': number;
+  'CV ROC-AUC': number;
+  'CV PR-AUC': number;
+  'Train F1': number;
+  'Train ROC-AUC': number;
+}
+
+export interface CurvePoint {
+  fpr?: number;
+  tpr?: number;
+  recall?: number;
+  precision?: number;
+}
+
+export interface ModelCurves {
+  roc_curve: Array<{ fpr: number; tpr: number }>;
+  pr_curve: Array<{ recall: number; precision: number }>;
+  confusion_matrix: {
+    matrix: number[][];
+    tn: number;
+    fp: number;
+    fn: number;
+    tp: number;
+  };
+}
+
+export interface ThresholdResponse {
+  status: string;
+  model: string;
+  threshold: number;
+  metrics: {
+    precision: number;
+    recall: number;
+    f1_score: number;
+    accuracy: number;
+  };
+  confusion_matrix: {
+    tn: number;
+    fp: number;
+    fn: number;
+    tp: number;
+    total: number;
+    matrix: number[][];
+  };
+}
+
+export interface ClusterProfile {
+  Session_Segment: number;
+  'Session Count': number;
+  'Segment Share (%)': number;
+  'Conversion Rate (%)': number;
+  'Avg Page Values': number;
+  'Avg Product Views': number;
+  'Avg Total Duration (s)': number;
+  'Avg Bounce Rate (%)': number;
+  'Avg Exit Rate (%)': number;
+  'Segment Persona': string;
+}
+
+export interface PcaPoint {
+  pc1: number;
+  pc2: number;
+  cluster: number;
+  cluster_label: string;
+  revenue: boolean;
+  page_values: number;
+  product_duration: number;
+  total_page_views: number;
+}
+
+export interface SegmentationAlgorithmsRow {
+  algorithm: string;
+  clusters: number | null;
+  silhouette: number | null;
+  davies_bouldin: number | null;
+  calinski_harabasz: number | null;
+}
+
+export interface GlobalImportanceItem {
+  Feature: string;
+  'Mean_|SHAP|_Importance': number;
+}
+
+export interface BeeswarmItem {
+  feature: string;
+  feature_value: number;
+  shap_impact: number;
+  sample_idx: number;
+}
+
+export interface ExplainGlobalData {
+  importance: GlobalImportanceItem[];
+  beeswarm: BeeswarmItem[];
+  dependence: Record<string, Array<{ value: number; shap: number }>>;
+  sample_count: number;
+}
+
+export interface ConversionInsightItem {
+  category: string;
+  metric: string;
+  finding: string;
+  action: string;
+}
+
+export interface ActionableRecommendationItem {
+  Pillar: string;
+  Recommendation: string;
+  Evidence: string;
+  Impact: string;
+  Strategy: string;
+}
+
+export interface InsightsData {
+  conversion_insights: ConversionInsightItem[];
+  actionable_recommendations: ActionableRecommendationItem[];
+  model_summary: {
+    top_model: string;
+    top_f1: number;
+    top_roc_auc: number;
+    top_pr_auc: number;
+    top_precision: number;
+    top_recall: number;
+    baseline_f1: number;
+    f1_uplift: number;
+  };
+}
+
+export interface DriverImpact {
+  Feature: string;
+  Value: number;
+  SHAP_Impact: number;
+}
+
+export interface PredictRequest {
+  Administrative: number;
+  Administrative_Duration: number;
+  Informational: number;
+  Informational_Duration: number;
+  ProductRelated: number;
+  ProductRelated_Duration: number;
+  BounceRates: number;
+  ExitRates: number;
+  PageValues: number;
+  SpecialDay: number;
+  Month: string;
+  OperatingSystems: number;
+  Browser: number;
+  Region: number;
+  TrafficType: number;
+  VisitorType: string;
+  Weekend: boolean;
+}
+
+export interface PredictResponse {
+  status: string;
+  prediction_class: number;
+  prediction_label: string;
+  purchase_probability: number;
+  probability_percentage: number;
+  risk_tier: string;
+  recommended_action: string;
+  positive_drivers: DriverImpact[];
+  negative_drivers: DriverImpact[];
+}
+
+export interface BatchPredictResponse {
+  status: string;
+  total_records: number;
+  valid_records: number;
+  invalid_records: number;
+  summary: {
+    predicted_purchases: number;
+    predicted_non_purchases: number;
+    conversion_rate: number;
+    avg_probability: number;
+    high_tier_count: number;
+    moderate_tier_count: number;
+    low_tier_count: number;
+  };
+  distribution: Array<{ range: string; count: number }>;
+  results: Array<{
+    row_index: number;
+    valid: boolean;
+    purchase_probability: number;
+    probability_percentage: number;
+    prediction_class: number;
+    prediction_label: string;
+    risk_tier: string;
+  }>;
+}
+
+// ----------------- API CLIENT CALLS -----------------
+
+export const api = {
+  getHealth: () => fetchJson<HealthData>('/api/health'),
+  getMeta: () => fetchJson<MetaResponse>('/api/meta'),
+  getDatasetSummary: () => fetchJson<DatasetSummaryResponse>('/api/dataset/summary'),
+  getDatasetQuality: () => fetchJson<{ status: string; data: QualityColumn[] }>('/api/dataset/quality'),
+  getEdaOverview: () => fetchJson<{ status: string; data: EdaOverviewData }>('/api/eda/overview'),
+  getEdaDistribution: (feature: string, bins = 20) =>
+    fetchJson<EdaDistributionResponse>(`/api/eda/distribution?feature=${encodeURIComponent(feature)}&bins=${bins}`),
+  getEdaCorrelation: () => fetchJson<{ status: string; data: CorrelationData }>('/api/eda/correlation'),
+  getModels: () => fetchJson<{ status: string; best_model: string; metrics: ModelMetric[] }>('/api/models'),
+  getCurves: () => fetchJson<{ status: string; data: Record<string, ModelCurves> }>('/api/models/curves'),
+  getThreshold: (model: string, t: number) =>
+    fetchJson<ThresholdResponse>(`/api/models/threshold?model=${encodeURIComponent(model)}&t=${t}`),
+  getSegmentation: () => fetchJson<{ status: string; k: number; profiles: ClusterProfile[] }>('/api/segmentation'),
+  getSegmentationPoints: () =>
+    fetchJson<{
+      status: string;
+      data: { variance_ratio: number[]; total_points: number; sample_points: PcaPoint[] };
+    }>('/api/segmentation/points'),
+  getSegmentationAlgorithms: () => fetchJson<{ status: string; data: SegmentationAlgorithmsRow[] }>('/api/segmentation/algorithms'),
+  getExplainGlobal: () => fetchJson<{ status: string; data: ExplainGlobalData }>('/api/explain/global'),
+  getInsights: () => fetchJson<{ status: string; data: InsightsData }>('/api/insights'),
+  predict: (data: PredictRequest) =>
+    fetchJson<PredictResponse>('/api/predict', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  predictBatch: (rows: PredictRequest[]) =>
+    fetchJson<BatchPredictResponse>('/api/predict/batch', {
+      method: 'POST',
+      body: JSON.stringify(rows),
+    }),
+};

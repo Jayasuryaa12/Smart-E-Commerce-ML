@@ -1,0 +1,331 @@
+{
+  "total_sessions": 12330,
+  "buyers": 1908,
+  "non_buyers": 10422,
+  "conversion_rate": 15.47,
+  "month_breakdown": [
+    {
+      "Month": "Feb",
+      "count": 184,
+      "rate": 1.63
+    },
+    {
+      "Month": "Mar",
+      "count": 1907,
+      "rate": 10.07
+    },
+    {
+      "Month": "May",
+      "count": 3364,
+      "rate": 10.85
+    },
+    {
+      "Month": "June",
+      "count": 288,
+      "rate": 10.07
+    },
+    {
+      "Month": "Jul",
+      "count": 432,
+      "rate": 15.28
+    },
+    {
+      "Month": "Aug",
+      "count": 433,
+      "rate": 17.55
+    },
+    {
+      "Month": "Sep",
+      "count": 448,
+      "rate": 19.2
+    },
+    {
+      "Month": "Oct",
+      "count": 549,
+      "rate": 20.95
+    },
+    {
+      "Month": "Nov",
+      "count": 2998,
+      "rate": 25.35
+    },
+    {
+      "Month": "Dec",
+      "count": 1727,
+      "rate": 12.51
+    }
+  ],
+  "visitor_breakdown": [
+    {
+      "VisitorType": "New_Visitor",
+      "count": 1694,
+      "rate": 24.91
+    },
+    {
+      "VisitorType": "Other",
+      "count": 85,
+      "rate": 18.82
+    },
+    {
+      "VisitorType": "Returning_Visitor",
+      "count": 10551,
+      "rate": 13.93
+    }
+  ],
+  "weekend_breakdown": [
+    {
+      "Weekend": false,
+      "count": 9462,
+      "rate": 14.89
+    },
+    {
+      "Weekend": true,
+      "count": 2868,
+      "rate": 17.4
+    }
+  ],
+  "traffic_breakdown": [
+    {
+      "TrafficType": 1,
+      "count": 2451,
+      "rate": 10.69
+    },
+    {
+      "TrafficType": 2,
+      "count": 3913,
+      "rate": 21.65
+    },
+    {
+      "TrafficType": 3,
+      "count": 2052,
+      "rate": 8.77
+    },
+    {
+      "TrafficType": 4,
+      "count": 1069,
+      "rate": 15.43
+    },
+    {
+      "TrafficType": 5,
+      "count": 260,
+      "rate": 21.54
+    },
+    {
+      "TrafficType": 6,
+      "count": 444,
+      "rate": 11.94
+    },
+    {
+      "TrafficType": 7,
+      "count": 40,
+      "rate": 30.0
+    },
+    {
+      "TrafficType": 8,
+      "count": 343,
+      "rate": 27.7
+    },
+    {
+      "TrafficType": 9,
+      "count": 42,
+      "rate": 9.52
+    },
+    {
+      "TrafficType": 10,
+      "count": 450,
+      "rate": 20.0
+    },
+    {
+      "TrafficType": 11,
+      "count": 247,
+      "rate": 19.03
+    },
+    {
+      "TrafficType": 12,
+      "count": 1,
+      "rate": 0.0
+    },
+    {
+      "TrafficType": 13,
+      "count": 738,
+      "rate": 5.83
+    },
+    {
+      "TrafficType": 14,
+      "count": 13,
+      "rate": 15.38
+    },
+    {
+      "TrafficType": 15,
+      "count": 38,
+      "rate": 0.0
+    },
+    {
+      "TrafficType": 16,
+      "count": 3,
+      "rate": 33.33
+    },
+    {
+      "TrafficType": 17,
+      "count": 1,
+      "rate": 0.0
+    },
+    {
+      "TrafficType": 18,
+      "count": 10,
+      "rate": 0.0
+    },
+    {
+      "TrafficType": 19,
+      "count": 17,
+      "rate": 5.88
+    },
+    {
+      "TrafficType": 20,
+      "count": 198,
+      "rate": 25.25
+    }
+  ],
+  "numerical_summary": [
+    {
+      "feature": "Administrative",
+      "mean": 2.3152,
+      "std": 3.3218,
+      "min": 0.0,
+      "median": 1.0,
+      "max": 27.0,
+      "skew": 1.9604,
+      "outliers_count": 404
+    },
+    {
+      "feature": "Administrative_Duration",
+      "mean": 80.8186,
+      "std": 176.7791,
+      "min": 0.0,
+      "median": 7.5,
+      "max": 3398.75,
+      "skew": 5.6157,
+      "outliers_count": 1172
+    },
+    {
+      "feature": "Informational",
+      "mean": 0.5036,
+      "std": 1.2702,
+      "min": 0.0,
+      "median": 0.0,
+      "max": 24.0,
+      "skew": 4.0365,
+      "outliers_count": 2631
+    },
+    {
+      "feature": "Informational_Duration",
+      "mean": 34.4724,
+      "std": 140.7493,
+      "min": 0.0,
+      "median": 0.0,
+      "max": 2549.375,
+      "skew": 7.5792,
+      "outliers_count": 2405
+    },
+    {
+      "feature": "ProductRelated",
+      "mean": 31.7315,
+      "std": 44.4755,
+      "min": 0.0,
+      "median": 18.0,
+      "max": 705.0,
+      "skew": 4.3415,
+      "outliers_count": 987
+    },
+    {
+      "feature": "ProductRelated_Duration",
+      "mean": 1194.7462,
+      "std": 1913.6693,
+      "min": 0.0,
+      "median": 598.9369,
+      "max": 63973.5222,
+      "skew": 7.2632,
+      "outliers_count": 961
+    },
+    {
+      "feature": "BounceRates",
+      "mean": 0.0222,
+      "std": 0.0485,
+      "min": 0.0,
+      "median": 0.0031,
+      "max": 0.2,
+      "skew": 2.9479,
+      "outliers_count": 1551
+    },
+    {
+      "feature": "ExitRates",
+      "mean": 0.0431,
+      "std": 0.0486,
+      "min": 0.0,
+      "median": 0.0252,
+      "max": 0.2,
+      "skew": 2.1488,
+      "outliers_count": 1099
+    },
+    {
+      "feature": "PageValues",
+      "mean": 5.8893,
+      "std": 18.5684,
+      "min": 0.0,
+      "median": 0.0,
+      "max": 361.7637,
+      "skew": 6.383,
+      "outliers_count": 2730
+    },
+    {
+      "feature": "SpecialDay",
+      "mean": 0.0614,
+      "std": 0.1989,
+      "min": 0.0,
+      "median": 0.0,
+      "max": 1.0,
+      "skew": 3.3027,
+      "outliers_count": 1251
+    },
+    {
+      "feature": "OperatingSystems",
+      "mean": 2.124,
+      "std": 0.9113,
+      "min": 1.0,
+      "median": 2.0,
+      "max": 8.0,
+      "skew": 2.0663,
+      "outliers_count": 111
+    },
+    {
+      "feature": "Browser",
+      "mean": 2.3571,
+      "std": 1.7173,
+      "min": 1.0,
+      "median": 2.0,
+      "max": 13.0,
+      "skew": 3.2423,
+      "outliers_count": 4369
+    },
+    {
+      "feature": "Region",
+      "mean": 3.1474,
+      "std": 2.4016,
+      "min": 1.0,
+      "median": 3.0,
+      "max": 9.0,
+      "skew": 0.9835,
+      "outliers_count": 511
+    },
+    {
+      "feature": "TrafficType",
+      "mean": 4.0696,
+      "std": 4.0252,
+      "min": 1.0,
+      "median": 2.0,
+      "max": 20.0,
+      "skew": 1.963,
+      "outliers_count": 2101
+    }
+  ]
+}

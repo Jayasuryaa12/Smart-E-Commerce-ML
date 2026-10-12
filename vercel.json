@@ -1,15 +1,16 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
+  "rewrites": [
     {
-      "src": "app.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
+      "source": "/api/(.*)",
+      "destination": "https://smart-ecommerce-ml.onrender.com/api/$1"
+    },
     {
-      "src": "/(.*)",
-      "dest": "app.py"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
