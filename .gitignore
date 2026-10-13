@@ -13,6 +13,10 @@ ENV/
 .vscode/
 .DS_Store
 *.log
+*.tsbuildinfo
+*.db
+*.sqlite
+*.sqlite3
 
 # CatBoost & Model Training Logs
 catboost_info/

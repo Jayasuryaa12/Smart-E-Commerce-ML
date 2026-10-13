@@ -380,6 +380,57 @@ export interface BatchPredictResponse {
   }>;
 }
 
+export interface PredictionRecord {
+  id: string;
+  created_at: string;
+  prediction_class: number;
+  prediction_label: string;
+  purchase_probability: number;
+  probability_percentage: number;
+  risk_tier: string;
+  recommended_action?: string;
+  positive_drivers?: DriverImpact[];
+  negative_drivers?: DriverImpact[];
+  session_features?: Record<string, any>;
+}
+
+export interface PredictionHistoryResponse {
+  status: string;
+  data: PredictionRecord[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  };
+  is_admin: boolean;
+  database_configured: boolean;
+}
+
+export interface PredictionStatsResponse {
+  status: string;
+  data: {
+    total_predictions: number;
+    purchase_intent_count: number;
+    non_purchase_intent_count: number;
+    conversion_rate_pct: number;
+    avg_purchase_probability: number;
+    tier_distribution: Record<string, number>;
+    database_configured: boolean;
+  };
+}
+
+export interface PredictionStorageHealthResponse {
+  status: string;
+  data: {
+    status: string;
+    connected: boolean;
+    engine: string;
+    total_records: number;
+    message: string;
+  };
+}
+
 // ----------------- API CLIENT CALLS -----------------
 
 export const api = {
@@ -414,4 +465,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(rows),
     }),
+  getPredictionHistory: (params?: { page?: number; limit?: number; tier?: string; classVal?: number; apiKey?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.tier && params.tier !== 'all') q.set('tier', params.tier);
+    if (params?.classVal !== undefined && params.classVal !== null) q.set('class', String(params.classVal));
+    if (params?.apiKey) q.set('api_key', params.apiKey);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    const headers: Record<string, string> = {};
+    if (params?.apiKey) headers['X-Admin-Key'] = params.apiKey;
+    return fetchJson<PredictionHistoryResponse>(`/api/predictions/history${qs}`, { headers });
+  },
+  getPredictionStats: () => fetchJson<PredictionStatsResponse>('/api/predictions/stats'),
+  getPredictionStorageHealth: () => fetchJson<PredictionStorageHealthResponse>('/api/predictions/health'),
 };

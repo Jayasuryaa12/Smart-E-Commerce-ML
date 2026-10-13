@@ -248,3 +248,28 @@ def test_health_endpoint_details(client):
     assert 'models_readiness' in data
     assert data['models_readiness']['purchase_model'] is True
 
+def test_predictions_history_endpoint(client):
+    res = client.get('/api/predictions/history')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data['status'] == 'success'
+    assert 'data' in data
+    assert 'pagination' in data
+
+def test_predictions_stats_endpoint(client):
+    res = client.get('/api/predictions/stats')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data['status'] == 'success'
+    assert 'total_predictions' in data['data']
+    assert 'conversion_rate_pct' in data['data']
+
+def test_predictions_health_endpoint(client):
+    res = client.get('/api/predictions/health')
+    # Returns 200 if connected or 503 if unconfigured (without crash)
+    assert res.status_code in (200, 503)
+    data = res.get_json()
+    assert 'data' in data
+    assert 'status' in data['data']
+
+

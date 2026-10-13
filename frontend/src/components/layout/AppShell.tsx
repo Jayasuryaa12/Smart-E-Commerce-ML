@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   AlertCircle,
   RefreshCw,
+  Database,
 } from 'lucide-react';
 
 interface AppShellProps {
@@ -35,6 +36,7 @@ interface AppShellProps {
 const navItems = [
   { path: '/dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
   { path: '/predict', label: 'Purchase Intent Prediction', icon: Target, badge: 'HERO' },
+  { path: '/history', label: 'Prediction History', icon: Database, badge: 'PERSIST' },
   { path: '/models', label: 'Model Leaderboard', icon: BarChart2 },
   { path: '/segments', label: 'Visitor Segmentation', icon: Users },
   { path: '/explain', label: 'SHAP Explainability', icon: Brain },

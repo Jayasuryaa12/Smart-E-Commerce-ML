@@ -14,6 +14,7 @@ import { ExplorePage } from '@/pages/ExplorePage';
 import { InsightsPage } from '@/pages/InsightsPage';
 import { PipelinePage } from '@/pages/PipelinePage';
 import { AboutPage } from '@/pages/AboutPage';
+import { HistoryPage } from '@/pages/HistoryPage';
 
 // Configure TanStack Query Client with caching & sane retry defaults
 const queryClient = new QueryClient({
@@ -36,6 +37,7 @@ export function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/predict" element={<PredictPage />} />
+              <Route path="/history" element={<HistoryPage />} />
               <Route path="/models" element={<ModelsPage />} />
               <Route path="/segments" element={<SegmentsPage />} />
               <Route path="/explain" element={<ExplainPage />} />

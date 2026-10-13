@@ -76,5 +76,13 @@ describe('API URL Construction', () => {
     expect(urlWithSlash).toContain('/api/health');
     expect(urlWithSlash).not.toContain('/api/api');
   });
+
+  it('exposes prediction history, stats, and health functions on api object', async () => {
+    const { api } = await import('./api');
+    expect(typeof api.getPredictionHistory).toBe('function');
+    expect(typeof api.getPredictionStats).toBe('function');
+    expect(typeof api.getPredictionStorageHealth).toBe('function');
+  });
 });
+
 

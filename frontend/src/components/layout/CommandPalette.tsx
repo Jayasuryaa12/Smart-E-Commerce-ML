@@ -16,6 +16,7 @@ import {
   Moon,
   Laptop,
   ArrowRight,
+  Database,
 } from 'lucide-react';
 
 interface CommandPaletteProps {
@@ -32,6 +33,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
   const items = [
     { label: 'Executive Dashboard', path: '/dashboard', icon: LayoutDashboard, category: 'Pages' },
     { label: 'Live Intent Prediction', path: '/predict', icon: Target, category: 'Pages' },
+    { label: 'Prediction History & Audit Log', path: '/history', icon: Database, category: 'Pages' },
     { label: 'Model Comparison & Leaderboard', path: '/models', icon: BarChart2, category: 'Pages' },
     { label: 'Customer Segmentation & PCA', path: '/segments', icon: Users, category: 'Pages' },
     { label: 'Explainability & SHAP', path: '/explain', icon: Brain, category: 'Pages' },

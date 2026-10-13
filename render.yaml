@@ -9,3 +9,15 @@ services:
         value: 3.10.12
       - key: CORS_ORIGINS
         value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smart-ecommerce-db
+          property: connectionString
+      - key: ADMIN_API_KEY
+        generateValue: true
+
+databases:
+  - name: smart-ecommerce-db
+    databaseName: ecommerce_ml
+    user: ecommerce_admin
+    plan: free

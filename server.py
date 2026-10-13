@@ -2,6 +2,7 @@ import os
 import sys
 import datetime
 import json
+import uuid
 import pandas as pd
 import numpy as np
 import joblib
@@ -12,6 +13,16 @@ sys.path.append(os.path.abspath('.'))
 from src.data_loader import load_raw_data, get_dataset_summary, check_data_quality
 from src.feature_engineering import create_session_features
 from src.explainability import explain_single_prediction
+from src.database import (
+    init_db, save_prediction, save_predictions_batch,
+    get_prediction_history, get_prediction_stats, check_database_health
+)
+
+# Initialize database schema safely if configured
+try:
+    init_db()
+except Exception as e:
+    print(f"[WARNING] Database auto-init warning: {e}")
 
 app = Flask(__name__)
 
@@ -129,7 +140,10 @@ def index():
             '/api/explain/global',
             '/api/insights',
             '/api/predict',
-            '/api/predict/batch'
+            '/api/predict/batch',
+            '/api/predictions/history',
+            '/api/predictions/stats',
+            '/api/predictions/health'
         ]
     })
 
@@ -139,12 +153,15 @@ def health():
     models_ready = (purchase_model is not None and preprocessor is not None)
     data_ready = os.path.exists(DATA_PATH)
     is_healthy = models_ready and data_ready
+    db_health = check_database_health()
 
     payload = {
         'status': 'healthy' if is_healthy else 'degraded',
         'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'dataset_loaded': data_ready,
         'model_loaded': models_ready,
+        'database_status': db_health.get('status', 'unconfigured'),
+        'database_connected': db_health.get('connected', False),
         'models_readiness': {
             'purchase_model': purchase_model is not None,
             'preprocessor': preprocessor is not None,
@@ -442,8 +459,23 @@ def predict():
         else:
             recommended_action = "Show exit-intent engagement modal or relevant popular category suggestions."
             
+        # Persist prediction to database layer
+        saved_ok, pred_id, save_err = save_prediction(
+            session_features=raw_in.iloc[0].to_dict(),
+            prediction_class=pred_class,
+            prediction_label='Purchase Intention' if pred_class == 1 else 'No Purchase Intention',
+            purchase_probability=round(prob, 4),
+            risk_tier=risk_tier,
+            recommended_action=recommended_action,
+            positive_drivers=pos_drivers,
+            negative_drivers=neg_drivers
+        )
+            
         return jsonify({
             'status': 'success',
+            'prediction_id': pred_id,
+            'persisted': saved_ok,
+            'persistence_status': 'stored' if saved_ok else f'unpersisted ({save_err})',
             'prediction_class': pred_class,
             'prediction_label': 'Purchase Intention' if pred_class == 1 else 'No Purchase Intention',
             'purchase_probability': round(prob, 4),
@@ -507,6 +539,7 @@ def predict_batch():
         high_tier = 0
         med_tier = 0
         low_tier = 0
+        batch_to_persist = []
         
         for i in range(total_records):
             p = float(probs[i])
@@ -520,13 +553,15 @@ def predict_batch():
                 tier = 'High Intent'
                 high_tier += 1
             elif p >= 0.35:
-                tier = 'Moderate'
+                tier = 'Moderate Intent'
                 med_tier += 1
             else:
-                tier = 'Low Intent'
+                tier = 'Low Intent / Bounce Risk'
                 low_tier += 1
                 
+            row_id = str(uuid.uuid4())
             results.append({
+                'id': row_id,
                 'row_index': i + 1,
                 'valid': True,
                 'purchase_probability': round(p, 4),
@@ -535,6 +570,19 @@ def predict_batch():
                 'prediction_label': 'Purchase Intention' if c == 1 else 'No Purchase Intention',
                 'risk_tier': tier
             })
+
+            batch_to_persist.append({
+                'id': row_id,
+                'session_features': raw_df.iloc[i].to_dict(),
+                'prediction_class': c,
+                'prediction_label': 'Purchase Intention' if c == 1 else 'No Purchase Intention',
+                'purchase_probability': round(p, 4),
+                'risk_tier': tier,
+                'recommended_action': "High intent conversion strategy" if c == 1 else "Engagement / retention strategy"
+            })
+
+        # Persist batch records to database
+        saved_batch_count, batch_save_err = save_predictions_batch(batch_to_persist)
 
         # Probability histogram (10 bins)
         hist_counts, hist_edges = np.histogram(probs, bins=10, range=(0.0, 1.0))
@@ -550,6 +598,7 @@ def predict_batch():
             'total_records': total_records,
             'valid_records': total_records,
             'invalid_records': 0,
+            'persisted_records': saved_batch_count,
             'summary': {
                 'predicted_purchases': purchases,
                 'predicted_non_purchases': non_purchases,
@@ -557,13 +606,75 @@ def predict_batch():
                 'avg_probability': round(float(np.mean(probs)) * 100, 2),
                 'high_tier_count': high_tier,
                 'moderate_tier_count': med_tier,
-                'low_tier_count': low_tier
+                'low_tier_count': low_tier,
+                'persisted_count': saved_batch_count
             },
             'distribution': hist_data,
             'results': results[:500] # return first 500 for snappy UI rendering, full count in summary
         })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/api/predictions/history', methods=['GET', 'OPTIONS'])
+def predictions_history():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 20, type=int)
+    risk_tier = request.args.get('tier', None, type=str)
+    pred_class = request.args.get('class', None, type=int)
+
+    # Access control: authenticate admin to show raw session features
+    auth_header = request.headers.get("Authorization", "")
+    admin_key_header = request.headers.get("X-Admin-Key", "")
+    admin_key_param = request.args.get("api_key", "")
+    expected_key = os.environ.get("ADMIN_API_KEY", "ecommerce-admin-secret-key")
+
+    is_admin = False
+    if (auth_header and auth_header.startswith("Bearer ") and auth_header[7:].strip() == expected_key) or \
+       (admin_key_header and admin_key_header.strip() == expected_key) or \
+       (admin_key_param and admin_key_param.strip() == expected_key):
+        is_admin = True
+
+    history_data = get_prediction_history(
+        page=page,
+        limit=limit,
+        risk_tier=risk_tier,
+        prediction_class=pred_class,
+        include_features=is_admin
+    )
+
+    return jsonify({
+        'status': 'success',
+        'data': history_data['records'],
+        'pagination': history_data['pagination'],
+        'is_admin': is_admin,
+        'database_configured': history_data.get('database_configured', False)
+    }), 200
+
+@app.route('/api/predictions/stats', methods=['GET', 'OPTIONS'])
+def predictions_stats():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+
+    stats = get_prediction_stats()
+    return jsonify({
+        'status': 'success',
+        'data': stats
+    }), 200
+
+@app.route('/api/predictions/health', methods=['GET', 'OPTIONS'])
+def predictions_health():
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+
+    health_info = check_database_health()
+    status_code = 200 if health_info.get('connected', False) else 503
+    return jsonify({
+        'status': 'success' if health_info.get('connected', False) else 'warning',
+        'data': health_info
+    }), status_code
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
