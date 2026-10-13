@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Gauge } from '@/components/ui/gauge';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
+import { ErrorState } from '@/components/ui/error-state';
 import { formatNumber, formatPercent } from '@/lib/formatters';
 import {
   Sparkles,
@@ -635,9 +636,19 @@ export const PredictPage: React.FC = () => {
                   )}
                 </div>
               </Card>
+            ) : predictMutation.isError ? (
+              <ErrorState
+                title="Prediction Failed"
+                message={
+                  (predictMutation.error as Error)?.message ||
+                  'Failed to get prediction from backend ML model.'
+                }
+                onRetry={handlePredict}
+                isRetrying={predictMutation.isPending}
+              />
             ) : (
               <Card className="p-8 text-center text-slate-400">
-                Click "Run Purchase Prediction" to view inferences and SHAP attribution.
+                Click &quot;Run Purchase Prediction&quot; to view inferences and SHAP attribution.
               </Card>
             )}
 

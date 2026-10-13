@@ -202,3 +202,49 @@ def test_predict_batch(client):
     assert len(data['results']) == 2
     assert 'distribution' in data
     assert 'summary' in data
+
+def test_cors_preflight_options(client):
+    res = client.open(
+        '/api/predict',
+        method='OPTIONS',
+        headers={
+            'Origin': 'https://smart-e-commerce-ml.vercel.app',
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'Content-Type'
+        }
+    )
+    assert res.status_code == 200
+    assert 'Access-Control-Allow-Origin' in res.headers
+    assert 'Access-Control-Allow-Methods' in res.headers
+
+def test_predict_invalid_payload(client):
+    res = client.post('/api/predict', data="not-json", content_type='application/json')
+    assert res.status_code == 400
+    data = res.get_json()
+    assert data['status'] == 'error'
+
+def test_predict_missing_required_fields(client):
+    # Payload missing 'PageValues' and 'ExitRates'
+    payload = {
+        'Administrative': 1,
+        'Administrative_Duration': 10.0,
+        'Informational': 0,
+        'Informational_Duration': 0.0,
+        'ProductRelated': 5,
+        'ProductRelated_Duration': 100.0,
+        'BounceRates': 0.05,
+        'Month': 'May'
+    }
+    res = client.post('/api/predict', data=json.dumps(payload), content_type='application/json')
+    assert res.status_code == 400
+    data = res.get_json()
+    assert data['status'] == 'error'
+    assert 'Missing required fields' in data['message']
+
+def test_health_endpoint_details(client):
+    res = client.get('/api/health')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert 'models_readiness' in data
+    assert data['models_readiness']['purchase_model'] is True
+

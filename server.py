@@ -15,21 +15,32 @@ from src.explainability import explain_single_prediction
 
 app = Flask(__name__)
 
-# Configure Dynamic CORS for Production (Vercel / Frontend Origins)
-@app.after_request
-def add_cors_headers(response):
-    allowed_origin = os.environ.get("CORS_ORIGINS", "*")
-    response.headers['Access-Control-Allow-Origin'] = allowed_origin
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    return response
-
-# Optional flask_cors integration if package is present
+# Configure CORS cleanly for production (Vercel & local development)
+allowed_origins_env = os.environ.get("CORS_ORIGINS", "*")
 try:
     from flask_cors import CORS
-    CORS(app, resources={r"/*": {"origins": os.environ.get("CORS_ORIGINS", "*")}})
+    if allowed_origins_env == "*":
+        CORS(app, resources={r"/*": {"origins": "*"}})
+    else:
+        origins_list = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
+        if "https://smart-e-commerce-ml.vercel.app" not in origins_list:
+            origins_list.append("https://smart-e-commerce-ml.vercel.app")
+        CORS(app, resources={r"/*": {"origins": origins_list}})
 except ImportError:
-    pass
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers['Access-Control-Allow-Origin'] = allowed_origins_env
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        return response
+
+@app.before_request
+def handle_options_preflight():
+    if request.method == "OPTIONS":
+        response = app.make_default_options_response()
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        return response
 
 # Project Relative Paths
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -38,15 +49,34 @@ MODEL_DIR = os.path.join(ROOT_DIR, 'models')
 CACHE_DIR = os.path.join(ROOT_DIR, 'reports', 'api_cache')
 
 def load_artifacts():
+    p_model, prep, m_results, s_data = None, None, None, None
+    print(f"[STARTUP] Loading ML model artifacts from: {MODEL_DIR}")
+    
     try:
-        purchase_model = joblib.load(os.path.join(MODEL_DIR, 'purchase_model.pkl'))
-        preprocessor = joblib.load(os.path.join(MODEL_DIR, 'preprocessing_pipeline.pkl'))
-        model_results = joblib.load(os.path.join(MODEL_DIR, 'model_comparison_results.pkl'))
-        seg_data = joblib.load(os.path.join(MODEL_DIR, 'segmentation_model.pkl'))
-        return purchase_model, preprocessor, model_results, seg_data
+        p_model = joblib.load(os.path.join(MODEL_DIR, 'purchase_model.pkl'))
+        print("  ✓ Loaded purchase_model.pkl")
     except Exception as e:
-        print(f"[WARNING] Error loading model artifacts: {e}")
-        return None, None, None, None
+        print(f"  ✗ Failed to load purchase_model.pkl: {e}")
+
+    try:
+        prep = joblib.load(os.path.join(MODEL_DIR, 'preprocessing_pipeline.pkl'))
+        print("  ✓ Loaded preprocessing_pipeline.pkl")
+    except Exception as e:
+        print(f"  ✗ Failed to load preprocessing_pipeline.pkl: {e}")
+
+    try:
+        m_results = joblib.load(os.path.join(MODEL_DIR, 'model_comparison_results.pkl'))
+        print("  ✓ Loaded model_comparison_results.pkl")
+    except Exception as e:
+        print(f"  ✗ Failed to load model_comparison_results.pkl: {e}")
+
+    try:
+        s_data = joblib.load(os.path.join(MODEL_DIR, 'segmentation_model.pkl'))
+        print("  ✓ Loaded segmentation_model.pkl")
+    except Exception as e:
+        print(f"  ✗ Failed to load segmentation_model.pkl: {e}")
+
+    return p_model, prep, m_results, s_data
 
 def read_cache_json(filename):
     cache_file = os.path.join(CACHE_DIR, filename)
@@ -106,14 +136,25 @@ def index():
 @app.route('/health', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
 def health():
-    return jsonify({
-        'status': 'healthy',
+    models_ready = (purchase_model is not None and preprocessor is not None)
+    data_ready = os.path.exists(DATA_PATH)
+    is_healthy = models_ready and data_ready
+
+    payload = {
+        'status': 'healthy' if is_healthy else 'degraded',
         'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        'dataset_loaded': os.path.exists(DATA_PATH),
-        'model_loaded': purchase_model is not None,
+        'dataset_loaded': data_ready,
+        'model_loaded': models_ready,
+        'models_readiness': {
+            'purchase_model': purchase_model is not None,
+            'preprocessor': preprocessor is not None,
+            'model_comparison_results': model_results is not None,
+            'segmentation_model': seg_data is not None
+        },
         'active_model_name': model_results.get('best_model_name', 'CatBoost') if model_results else 'CatBoost',
         'allowed_cors_origin': os.environ.get("CORS_ORIGINS", "*")
-    }), 200
+    }
+    return jsonify(payload), 200 if is_healthy else 503
 
 @app.route('/api/meta', methods=['GET'])
 def get_meta():
@@ -343,13 +384,20 @@ def get_insights():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+REQUIRED_PREDICT_COLS = [
+    'Administrative', 'Administrative_Duration', 'Informational', 'Informational_Duration',
+    'ProductRelated', 'ProductRelated_Duration', 'BounceRates', 'ExitRates', 'PageValues',
+    'SpecialDay', 'Month', 'OperatingSystems', 'Browser', 'Region', 'TrafficType',
+    'VisitorType', 'Weekend'
+]
+
 @app.route('/api/predict', methods=['POST', 'OPTIONS'])
 def predict():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
-    if purchase_model is None:
-        return jsonify({'status': 'error', 'message': 'Prediction model artifact not loaded'}), 500
+    if purchase_model is None or preprocessor is None:
+        return jsonify({'status': 'error', 'message': 'Prediction model artifact not loaded'}), 503
     
     try:
         payload = request.get_json(force=True)
@@ -362,6 +410,13 @@ def predict():
             raw_in = pd.DataFrame(payload)
         else:
             return jsonify({'status': 'error', 'message': 'Invalid payload format'}), 400
+
+        missing = [c for c in REQUIRED_PREDICT_COLS if c not in raw_in.columns]
+        if missing:
+            return jsonify({
+                'status': 'error',
+                'message': f"Missing required fields: {', '.join(missing)}"
+            }), 400
             
         feat_in = create_session_features(raw_in)
         prob = float(purchase_model.predict_proba(feat_in)[0, 1])
@@ -406,8 +461,8 @@ def predict_batch():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
-    if purchase_model is None:
-        return jsonify({'status': 'error', 'message': 'Prediction model artifact not loaded'}), 500
+    if purchase_model is None or preprocessor is None:
+        return jsonify({'status': 'error', 'message': 'Prediction model artifact not loaded'}), 503
         
     try:
         # Check if CSV file upload or JSON

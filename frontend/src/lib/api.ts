@@ -1,16 +1,59 @@
 import { z } from 'zod';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+export function getApiBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (envUrl) {
+    let clean = envUrl.replace(/\/+$/, '');
+    if (clean.endsWith('/api')) {
+      clean = clean.slice(0, -4);
+    }
+    return clean;
+  }
+  // In production builds, default to deployed Render backend to avoid broken relative calls
+  if (import.meta.env.PROD) {
+    return 'https://smart-e-commerce-ml.onrender.com';
+  }
+  // In development, empty string lets Vite server proxy /api to http://localhost:5000
+  return '';
+}
+
+export function buildApiUrl(path: string): string {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const base = getApiBaseUrl();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
 
 async function fetchJson<T>(url: string, options?: RequestInit, schema?: z.ZodSchema<T>): Promise<T> {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
-  const res = await fetch(fullUrl, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+  const fullUrl = buildApiUrl(url);
+
+  // 45-second timeout with friendly cold-start messaging for Render sleep
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+  let res: Response;
+  try {
+    res = await fetch(fullUrl, {
+      ...options,
+      signal: options?.signal || controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error(
+        'Request timed out (45s). The backend on Render may be waking up from sleep. Please retry in a few moments.'
+      );
+    }
+    throw new Error(err.message || 'Network error communicating with the backend API.');
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     let errorMsg = `HTTP Error ${res.status}: ${res.statusText}`;
@@ -42,6 +85,7 @@ export const HealthSchema = z.object({
   model_loaded: z.boolean(),
   active_model_name: z.string(),
   allowed_cors_origin: z.string().optional(),
+  models_readiness: z.record(z.string(), z.boolean()).optional(),
 });
 export type HealthData = z.infer<typeof HealthSchema>;
 

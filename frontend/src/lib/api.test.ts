@@ -41,4 +41,40 @@ describe('API Zod Schemas', () => {
     const result = MetaSchema.safeParse(validMeta);
     expect(result.success).toBe(true);
   });
+
+  it('validates health payload with models_readiness', () => {
+    const validHealthWithReadiness = {
+      status: 'healthy',
+      timestamp: '2026-10-13T05:00:00Z',
+      dataset_loaded: true,
+      model_loaded: true,
+      active_model_name: 'CatBoost',
+      models_readiness: {
+        purchase_model: true,
+        preprocessor: true,
+        model_comparison_results: true,
+        segmentation_model: true,
+      },
+    };
+    const result = HealthSchema.safeParse(validHealthWithReadiness);
+    expect(result.success).toBe(true);
+  });
 });
+
+describe('API URL Construction', () => {
+  it('buildApiUrl leaves absolute URLs unchanged', async () => {
+    const { buildApiUrl } = await import('./api');
+    expect(buildApiUrl('https://example.com/api/test')).toBe('https://example.com/api/test');
+    expect(buildApiUrl('http://localhost:5000/api/health')).toBe('http://localhost:5000/api/health');
+  });
+
+  it('buildApiUrl normalizes leading slashes correctly', async () => {
+    const { buildApiUrl } = await import('./api');
+    const urlWithSlash = buildApiUrl('/api/health');
+    const urlWithoutSlash = buildApiUrl('api/health');
+    expect(urlWithSlash).toBe(urlWithoutSlash);
+    expect(urlWithSlash).toContain('/api/health');
+    expect(urlWithSlash).not.toContain('/api/api');
+  });
+});
+
