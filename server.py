@@ -65,27 +65,27 @@ def load_artifacts():
     
     try:
         p_model = joblib.load(os.path.join(MODEL_DIR, 'purchase_model.pkl'))
-        print("  ✓ Loaded purchase_model.pkl")
+        print("  [OK] Loaded purchase_model.pkl")
     except Exception as e:
-        print(f"  ✗ Failed to load purchase_model.pkl: {e}")
+        print(f"  [FAIL] Failed to load purchase_model.pkl: {e}")
 
     try:
         prep = joblib.load(os.path.join(MODEL_DIR, 'preprocessing_pipeline.pkl'))
-        print("  ✓ Loaded preprocessing_pipeline.pkl")
+        print("  [OK] Loaded preprocessing_pipeline.pkl")
     except Exception as e:
-        print(f"  ✗ Failed to load preprocessing_pipeline.pkl: {e}")
+        print(f"  [FAIL] Failed to load preprocessing_pipeline.pkl: {e}")
 
     try:
         m_results = joblib.load(os.path.join(MODEL_DIR, 'model_comparison_results.pkl'))
-        print("  ✓ Loaded model_comparison_results.pkl")
+        print("  [OK] Loaded model_comparison_results.pkl")
     except Exception as e:
-        print(f"  ✗ Failed to load model_comparison_results.pkl: {e}")
+        print(f"  [FAIL] Failed to load model_comparison_results.pkl: {e}")
 
     try:
         s_data = joblib.load(os.path.join(MODEL_DIR, 'segmentation_model.pkl'))
-        print("  ✓ Loaded segmentation_model.pkl")
+        print("  [OK] Loaded segmentation_model.pkl")
     except Exception as e:
-        print(f"  ✗ Failed to load segmentation_model.pkl: {e}")
+        print(f"  [FAIL] Failed to load segmentation_model.pkl: {e}")
 
     return p_model, prep, m_results, s_data
 
