@@ -39,31 +39,66 @@ except Exception as e:
 
 app = Flask(__name__)
 
-# Configure CORS cleanly for production (Vercel & local development)
-allowed_origins_env = os.environ.get("CORS_ORIGINS", "*")
+# Allowed CORS origins
+STANDARD_ORIGINS = [
+    "https://smart-e-commerce-ml.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000"
+]
+
+env_origins = os.environ.get("CORS_ORIGINS", "").strip()
+allowed_origins = list(STANDARD_ORIGINS)
+if env_origins and env_origins != "*":
+    for o in env_origins.split(","):
+        cleaned = o.strip()
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
+
 try:
     from flask_cors import CORS
-    if allowed_origins_env == "*":
-        CORS(app, resources={r"/*": {"origins": "*"}})
-    else:
-        origins_list = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
-        if "https://smart-e-commerce-ml.vercel.app" not in origins_list:
-            origins_list.append("https://smart-e-commerce-ml.vercel.app")
-        CORS(app, resources={r"/*": {"origins": origins_list}})
+    CORS(
+        app,
+        resources={r"/*": {"origins": allowed_origins if env_origins != "*" else "*"}},
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+        allow_headers=["Content-Type", "Authorization", "X-Admin-Key"],
+        supports_credentials=False,
+        max_age=86400
+    )
 except ImportError:
-    @app.after_request
-    def add_cors_headers(response):
-        response.headers['Access-Control-Allow-Origin'] = allowed_origins_env
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        return response
+    pass
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin")
+    if origin and (origin in allowed_origins or env_origins == "*"):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+    elif not response.headers.get("Access-Control-Allow-Origin"):
+        response.headers["Access-Control-Allow-Origin"] = "https://smart-e-commerce-ml.vercel.app"
+
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Admin-Key"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    return response
 
 @app.before_request
 def handle_options_preflight():
     if request.method == "OPTIONS":
         response = app.make_default_options_response()
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        origin = request.headers.get("Origin")
+        if origin and (origin in allowed_origins or env_origins == "*"):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+        else:
+            response.headers["Access-Control-Allow-Origin"] = "https://smart-e-commerce-ml.vercel.app"
+
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Admin-Key"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD"
+        response.headers["Access-Control-Max-Age"] = "86400"
         return response
 
 # Project Relative Paths

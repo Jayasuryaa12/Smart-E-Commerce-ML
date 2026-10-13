@@ -1,24 +1,30 @@
 import { z } from 'zod';
 
 export function getApiBaseUrl(): string {
-  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
-  if (envUrl) {
-    let clean = envUrl.replace(/\/+$/, '');
-    if (clean.endsWith('/api')) {
-      clean = clean.slice(0, -4);
-    }
-    return clean;
+  let envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+
+  // In local development server without explicit VITE_API_URL, use relative path so Vite proxy routes to localhost:5000
+  if (import.meta.env.MODE === 'development' && !envUrl) {
+    return '';
   }
-  // In production builds, default to deployed Render backend to avoid broken relative calls
-  if (import.meta.env.PROD) {
-    return 'https://smart-e-commerce-ml-1.onrender.com';
+
+  // Safeguard: Automatically rewrite any stale or deprecated backend URL to the active smart-e-commerce-ml-1 instance
+  if (!envUrl || envUrl === 'https://smart-e-commerce-ml.onrender.com' || envUrl.includes('smart-e-commerce-ml.onrender.com')) {
+    envUrl = 'https://smart-e-commerce-ml-1.onrender.com';
   }
-  // In development, empty string lets Vite server proxy /api to http://localhost:5000
-  return '';
+
+  let clean = envUrl.replace(/\/+$/, '');
+  if (clean.endsWith('/api')) {
+    clean = clean.slice(0, -4);
+  }
+  return clean;
 }
 
 export function buildApiUrl(path: string): string {
   if (path.startsWith('http://') || path.startsWith('https://')) {
+    if (path.includes('smart-e-commerce-ml.onrender.com')) {
+      return path.replace('smart-e-commerce-ml.onrender.com', 'smart-e-commerce-ml-1.onrender.com');
+    }
     return path;
   }
   const base = getApiBaseUrl();

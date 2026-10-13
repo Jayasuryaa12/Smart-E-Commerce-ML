@@ -77,6 +77,15 @@ describe('API URL Construction', () => {
     expect(urlWithSlash).not.toContain('/api/api');
   });
 
+  it('getApiBaseUrl resolves to smart-e-commerce-ml-1.onrender.com and protects against stale URLs', async () => {
+    const { getApiBaseUrl, buildApiUrl } = await import('./api');
+    const base = getApiBaseUrl();
+    expect(base).toContain('smart-e-commerce-ml-1.onrender.com');
+    // Stale absolute URL gets rewritten
+    const rewritten = buildApiUrl('https://smart-e-commerce-ml.onrender.com/api/predictions/history');
+    expect(rewritten).toBe('https://smart-e-commerce-ml-1.onrender.com/api/predictions/history');
+  });
+
   it('exposes prediction history, stats, and health functions on api object', async () => {
     const { api } = await import('./api');
     expect(typeof api.getPredictionHistory).toBe('function');

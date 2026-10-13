@@ -204,7 +204,8 @@ def test_predict_batch(client):
     assert 'summary' in data
 
 def test_cors_preflight_options(client):
-    res = client.open(
+    # Test POST preflight
+    res_predict = client.open(
         '/api/predict',
         method='OPTIONS',
         headers={
@@ -213,9 +214,24 @@ def test_cors_preflight_options(client):
             'Access-Control-Request-Headers': 'Content-Type'
         }
     )
-    assert res.status_code == 200
-    assert 'Access-Control-Allow-Origin' in res.headers
-    assert 'Access-Control-Allow-Methods' in res.headers
+    assert res_predict.status_code == 200
+    assert res_predict.headers.get('Access-Control-Allow-Origin') == 'https://smart-e-commerce-ml.vercel.app'
+    assert 'POST' in res_predict.headers.get('Access-Control-Allow-Methods', '')
+
+    # Test GET preflight on history with X-Admin-Key header
+    res_history = client.open(
+        '/api/predictions/history',
+        method='OPTIONS',
+        headers={
+            'Origin': 'https://smart-e-commerce-ml.vercel.app',
+            'Access-Control-Request-Method': 'GET',
+            'Access-Control-Request-Headers': 'Content-Type, Authorization, X-Admin-Key'
+        }
+    )
+    assert res_history.status_code == 200
+    assert res_history.headers.get('Access-Control-Allow-Origin') == 'https://smart-e-commerce-ml.vercel.app'
+    assert 'X-Admin-Key' in res_history.headers.get('Access-Control-Allow-Headers', '')
+    assert 'GET' in res_history.headers.get('Access-Control-Allow-Methods', '')
 
 def test_predict_invalid_payload(client):
     res = client.post('/api/predict', data="not-json", content_type='application/json')
