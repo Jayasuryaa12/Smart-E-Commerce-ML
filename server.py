@@ -10,6 +10,19 @@ from flask import Flask, request, jsonify
 
 sys.path.append(os.path.abspath('.'))
 
+# Load .env file if present in project root
+_env_path = os.path.join(os.path.abspath('.'), '.env')
+if os.path.exists(_env_path):
+    try:
+        with open(_env_path, 'r', encoding='utf-8') as _ef:
+            for _line in _ef:
+                _line = _line.strip()
+                if _line and not _line.startswith('#') and '=' in _line:
+                    _k, _v = _line.split('=', 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+    except Exception as _e:
+        print(f"[CONFIG] Warning loading .env: {_e}")
+
 from src.data_loader import load_raw_data, get_dataset_summary, check_data_quality
 from src.feature_engineering import create_session_features
 from src.explainability import explain_single_prediction
