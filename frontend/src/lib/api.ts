@@ -11,7 +11,7 @@ export function getApiBaseUrl(): string {
   }
   // In production builds, default to deployed Render backend to avoid broken relative calls
   if (import.meta.env.PROD) {
-    return 'https://smart-e-commerce-ml.onrender.com';
+    return 'https://smart-e-commerce-ml-1.onrender.com';
   }
   // In development, empty string lets Vite server proxy /api to http://localhost:5000
   return '';

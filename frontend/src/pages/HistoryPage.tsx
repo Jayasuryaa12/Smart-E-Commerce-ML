@@ -355,14 +355,14 @@ export const HistoryPage: React.FC = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-800 dark:text-slate-200">
-                          {r.probability_percentage}%
+                          {r.probability_percentage != null ? `${r.probability_percentage}%` : 'N/A'}
                         </span>
                         <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${
                               r.prediction_class === 1 ? 'bg-emerald-500' : 'bg-rose-500'
                             }`}
-                            style={{ width: `${r.probability_percentage}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, r.probability_percentage ?? 0))}%` }}
                           />
                         </div>
                       </div>

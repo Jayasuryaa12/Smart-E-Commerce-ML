@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://smart-e-commerce-ml.onrender.com/api/$1"
+      "destination": "https://smart-e-commerce-ml-1.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
